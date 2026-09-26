@@ -1,0 +1,72 @@
+This is the complete wiring diagram for the architecture defined in your GitHub repository and past conversation: 2S (7.4V) Battery Pack charging from a 5V Type-C connection, stepped down to 5V, and including the physical button circuit.
+Important Disclaimers before you begin:
+Safety First: Lithium-ion batteries are dangerous if mistreated. Ensure all wires are properly insulated. Do not short the battery leads.
+Buck Converter Adjustment: CRITICAL! You must connect the 7.4V battery pack to the Buck converter input and use a multimeter to adjust the screw potentiometer until the output reads exactly 5.0V BEFORE you connect the output wires to the ESP32-CAM. If you omit this step, you will instantly fry your microcontroller.
+The 2S Charger: You cannot use TP4056 modules for this series configuration from a single Type-C port. You must use a dedicated 2S Lithium Boost Charger/BMS Board designed for 5V Type-C input (e.g., boards based on the IP2326 or TP5100).
+Complete DIGICAM-8000 Wiring Diagram
+Plaintext
+[ 5V USB Type-C Power Source (Wall Adapter) ]
+              | (Standard USB-C Cable)
+              v
+[ 5V Type-C Input Connector (Breakout board or built into Charger) ]
+      (5V+) -----------------> [ 2S Type-C BMS/Charger IN+ ]
+      (GND) -----------------> [ 2S Type-C BMS/Charger IN- ]
+
+                                          | (BMS Internal Logic)
+                                          v
+      [ 2S BMS/Charger Board (Boosts to ~8.4V max) ]
+            (B+) -------(+) [ Li-ion Cell 2 ] (-)
+                                             | (Series Junction / Balance connection)
+            (B-) -------(-) [ Li-ion Cell 1 ] (+)
+            (BM)* optional -------------------| (Connecting BM to junction is optimal)
+
+                                          |
+                        (Pack Output becomes 7.4V Nominal / 8.4V Peak)
+                                          |
+            (+) <-------------------------+
+            (-) (Common GND) -------------+
+                                          |
+                                          v
+                        [ STEP-DOWN (BUCK) CONVERTER ]
+                         (IN+) ----------------+
+                         (IN-) Common GND ----+
+                                               |
+                                        [Potentiometer Screw]
+                                        Adjust to exactly 5.0V OUT
+                                               |
+                         (OUT+) <--------------+
+                         (OUT-) Common GND ----+
+                                          |
+                                          v
+      +-----------------------------------+
+      |                                   |
+    (5V Pin)                           (GND Pin)
+      +-----------------------------------+
+      |                                   |
+      |           ESP32-CAM BOARD         |
+      |                                   |
+    (3.3V Pin)                        (GPIO 13)
+      +-----------------------------------+
+      |             ^                     |
+      |             |                     |
+      +----[ 10kΩ Resistor ]----+---------+
+                                |
+                                |
+                         [Shutter Button Leg A]
+                          (Push-Tactile SW)
+                         [Shutter Button Leg B (Diagonal)]
+                                |
+                                |
+                                v
+                            Common GND
+Visual Pin Layout Key
+ESP32-CAM Board Section
+GND Pin: Power ground input from the Buck converter, the diagonal leg of the shutter button, and the charging BMS output (common ground).
+5V Pin: Main 5V power input (must be adjusted to exactly 5.0V) coming from the Buck Converter OUT+.
+3.3V Pin: Used only to connect the first leg of the 10kΩ resistor to create the logical Pull-Up signal.
+GPIO 13 Pin: Connected to both the logical signal line (the junction of the resistor and the button leg). When the button closes diagonally across GND, this pin drops to logical LOW.
+4-Pin Shutter Button Section
+Because 4-pin tactile switches can be confusing, the diagonal rule is the only foolproof method.
+Place the 4-pin rectangular switch so it straddles the breadboard center gap.
+Wire Top-Left leg to ESP32-CAM GND.
+Wire Bottom-Right leg (diagonal leg) to ESP32-CAM GPIO 13 and the 10kΩ resistor.
